@@ -8,49 +8,51 @@ int main()
 	vector<Mat> start_img, final_img;
 
 	WIN32_FIND_DATA FileName;
-	TCHAR sciezka[] = TEXT("C:/Users/Tomek/Pictures/PSC/Start_image");
-	TCHAR rozszezenie[] = TEXT("/*jpg");
-	TCHAR roz_sciezka[MAX_PATH];
+	TCHAR scierzka[] = TEXT("C:/POSproj");
+	TCHAR rozszerzenie[] = TEXT("/*.jpg\0");
+	TCHAR roz_scierzka[MAX_PATH];
 	vector<string> FileList;
 
-	StringCchCopy(roz_sciezka, MAX_PATH, sciezka);
-	StringCchCopy(roz_sciezka, MAX_PATH, rozszezenie);
-
-	HANDLE hfind = FindFirstFile(roz_sciezka, &FileName);
+	StringCchCopy(roz_scierzka, MAX_PATH, scierzka);
+	StringCchCat(roz_scierzka, MAX_PATH, rozszerzenie);
+	
+	HANDLE hfind = FindFirstFile(roz_scierzka, &FileName);
 		
 	if (hfind != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
 			wchar_t *f_name = FileName.cFileName;
-			wchar_t *sciezka_file_name = L"sciezka";
+			wchar_t *sciezka_file_name = scierzka;
 			wstring ws(f_name);
 			wstring ws2(sciezka_file_name);
 			string str(ws.begin(), ws.end());
 			string file_name(ws2.begin(), ws2.end());
-			string full_file_name = str + file_name;
+			string full_file_name = file_name + "/" + str;
 			FileList.push_back(full_file_name);
+			cout << full_file_name <<"\n";
 		} while (FindNextFile(hfind, &FileName));
 	}
+	
 	int n = FileList.size();
 	for (int i = 0; i < FileList.size(); i++)
 	{
 		start_img.push_back(imread(FileList[i]));
 		imshow("Start_images"+i,start_img[i]);
 	}
-
+	
 	/*
-	int n = 0;
+	int n = 1;
 	string table[3];
-	table[0] = "C:/Users/Tomek/Pictures/PSC/Start_image/wiewiorka.jpg";
-	table[1] = "C:/Users/Tomek/Pictures/PSC/Start_image/sowa.jpg";
-	table[2] = "C:/Users/Tomek/Pictures/PSC/Start_image/sowa2.jpg";
+	table[0] = "C:/POSproj/test_image.jpg";
+	//table[1] = "C:/Users/Tomek/Pictures/PSC/Start_image/sowa.jpg";
+	//table[2] = "C:/Users/Tomek/Pictures/PSC/Start_image/sowa2.jpg";
 
 	for (int i = 0; i < n; i++)
 	{
 		start_img.push_back(imread(table[i]));
 	}*/
-
+	
 	int row = ceil(sqrt((double)n));
 	int column = ceil((double)n / row);
 
@@ -88,8 +90,8 @@ int main()
 		imshow("Start_images", mozaika);
 		imshow("Final_images", mozaika2);
 	}
-	imwrite("C:/Users/Tomek/Pictures/PSC/Finish_image/Start_images.jpg", mozaika);
-	imwrite("C:/Users/Tomek/Pictures/PSC/Finish_image/Final_images.jpg", mozaika2);
+	imwrite("C:/POSproj/Start_images.jpg", mozaika);
+	imwrite("C:/POSproj/Final_images.jpg", mozaika2);
 	waitKey(0);
     return 0;
 }

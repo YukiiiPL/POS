@@ -19,6 +19,7 @@
 #include "string.h"
 #include "conio.h"
 #include "strsafe.h"
+#include <process.h>
 
 #include "INIReader.h"
 #include "ini.h"

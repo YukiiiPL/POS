@@ -3,6 +3,34 @@
 
 #include "stdafx.h"
 
+struct EqImgsParam {
+	int startIndex;
+	int step;
+	vector<Mat> &start_img;
+	vector<Mat> &final_img;
+};
+
+
+void  EqualizeImages(void *data) {
+	EqImgsParam *params = (EqImgsParam*)data;
+	for (int i = params->startIndex; i < params->start_img.size(); i += params->step)
+	{
+		Mat temporary;
+		vector<Mat> channels;
+		cvtColor(params->start_img[i], params->start_img[i], CV_BGR2YCrCb);
+
+		split(params->start_img[i], channels);
+		equalizeHist(channels[0], channels[0]);
+
+		merge(channels, temporary);
+
+		cvtColor(params->start_img[i], params->start_img[i], CV_YCrCb2BGR);
+		cvtColor(temporary, temporary, CV_YCrCb2BGR);
+		params->final_img.push_back(temporary);
+	}
+}
+
+
 int main()
 {
 	struct stat info;
@@ -122,6 +150,8 @@ int main()
 
 	Mat mozaika(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
 	Mat mozaika2(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
+
+	/*
 	
 	for (int i = 0; i < start_img.size(); i++)
 	{
@@ -138,6 +168,40 @@ int main()
 		cvtColor(temporary, temporary, CV_YCrCb2BGR);
 		final_img.push_back(temporary);
 	}
+
+	*/
+
+
+	EqImgsParam params[threadCount] = {
+		{
+			0,
+			2,
+			start_img,
+			final_img
+		},
+		{
+			1,
+			2,
+			start_img,
+			final_img
+		}
+
+	};
+
+	
+	
+
+	HANDLE threads[threadCount];
+
+	for (int i = 0; i < threadCount; ++i)
+	{
+		threads[i] = (HANDLE)_beginthread(&EqualizeImages, 0, &params[i]);
+	}
+
+		WaitForMultipleObjects(threadCount, threads, TRUE, INFINITE);
+
+
+
 	for (int i = 0; i < start_img.size(); i++)
 	{
 		int x = i%column*s;

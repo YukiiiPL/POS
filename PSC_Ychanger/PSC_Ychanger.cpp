@@ -6,7 +6,7 @@
 struct EqImgsParam {
 	int startIndex;
 	int step;
-	vector<Mat> &start_img;
+	vector<string> &start_img;
 	vector<Mat> &final_img;
 };
 
@@ -16,15 +16,18 @@ void  EqualizeImages(void *data) {
 	for (int i = params->startIndex; i < params->start_img.size(); i += params->step)
 	{
 		Mat temporary;
-		vector<Mat> channels;
-		cvtColor(params->start_img[i], params->start_img[i], CV_BGR2YCrCb);
+		Mat start_image;
+		start_image = imread(params->start_img[i]);
 
-		split(params->start_img[i], channels);
+		vector<Mat> channels;
+		cvtColor(start_image, start_image, CV_BGR2YCrCb);
+
+		split(start_image, channels);
 		equalizeHist(channels[0], channels[0]);
 
 		merge(channels, temporary);
 
-		cvtColor(params->start_img[i], params->start_img[i], CV_YCrCb2BGR);
+		cvtColor(start_image, start_image, CV_YCrCb2BGR);
 		cvtColor(temporary, temporary, CV_YCrCb2BGR);
 		params->final_img.push_back(temporary);
 	}
@@ -87,7 +90,7 @@ int main()
 		}
 	}
 	else if (info.st_mode & S_IFDIR)
-		printf("Sciezka zapisu - poprawna.");
+		printf("Sciezka zapisu - poprawna.\n");
 	else
 	{
 		printf("Podana sciezka zapisu nie istnieje.\n");
@@ -130,17 +133,17 @@ int main()
 			string file_name(ws2.begin(), ws2.end());
 			string full_file_name = file_name + "/" + str;
 			FileList.push_back(full_file_name);
-			cout << full_file_name <<"\n";
 		} while (FindNextFile(hfind, &FileName));
 	}
 	
 	int n = FileList.size();
+	/*
 	for (int i = 0; i < FileList.size(); i++)
 	{
 		start_img.push_back(imread(FileList[i]));
-		imshow("Start_images"+i,start_img[i]);
+		//imshow("Start_images"+i,start_img[i]);
 	}
-	
+	*/
 	
 	int row = ceil(sqrt((double)n));
 	int column = ceil((double)n / row);
@@ -150,7 +153,7 @@ int main()
 
 	Mat mozaika(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
 	Mat mozaika2(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
-
+	
 	/*
 	
 	for (int i = 0; i < start_img.size(); i++)
@@ -171,24 +174,23 @@ int main()
 
 	*/
 
-
+	const int threadCount = 2;
 	EqImgsParam params[threadCount] = {
 		{
 			0,
 			2,
-			start_img,
+			FileList,
 			final_img
 		},
 		{
 			1,
 			2,
-			start_img,
+			FileList,
 			final_img
 		}
 
 	};
 
-	
 	
 
 	HANDLE threads[threadCount];
@@ -201,15 +203,24 @@ int main()
 		WaitForMultipleObjects(threadCount, threads, TRUE, INFINITE);
 
 
-
-	for (int i = 0; i < start_img.size(); i++)
+	for (int i = 0; i < FileList.size(); i++)
 	{
 		int x = i%column*s;
 		int y = i / column*w;
+		int z;
+		if (i % 2 != 0)
+		{
+			z = i - i / 2 - 1;
+		}
+		else
+		{
+			z = FileList.size() / 2 + i / 2;
+		}
+		cout << z << " " << i << endl;
 		Mat roi = mozaika(Rect(x, y, s, w));
 		Mat roi2 = mozaika2(Rect(x, y, s, w));
-		resize(start_img[i], roi, roi.size());
-		resize(final_img[i], roi2, roi2.size());
+		resize(imread(FileList[i]), roi, roi.size());
+		resize(final_img[z], roi2, roi2.size());
 		namedWindow("Start_images", CV_WINDOW_KEEPRATIO);
 		namedWindow("Final_images", CV_WINDOW_KEEPRATIO);
 		imshow("Start_images", mozaika);

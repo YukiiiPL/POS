@@ -3,6 +3,10 @@
 
 #include "stdafx.h"
 
+/// \brief Klasa przechowujaca parametry dla watku 
+
+/// \details Klasa przechowuje takie parametry jak indeks startowy dla watku, krok przeszukiwania wektora oraz wskazniki dla wektora sciezek zrodlowych oraz wektora obrazow docelowych
+
 struct EqImgsParam {
 	int startIndex;
 	int step;
@@ -10,6 +14,13 @@ struct EqImgsParam {
 	vector<Mat> &final_img;
 };
 
+	/// \file
+
+	/// \brief Funkcja sluzaca do wyrownwania jasnosci obrazu
+
+	/// \details Funkcja dokonuje operacji wyrownania jasnosci na wszystkich obrazach znajdujacych sie wewnatrz wektora <i>data</i>
+
+	/// \param <i>data</i> wektor zawierajacy sciezki do obrazow
 
 void  EqualizeImages(void *data) {
 	EqImgsParam *params = (EqImgsParam*)data;
@@ -43,6 +54,7 @@ int main()
 
 	INIReader reader("Path.ini");
 
+	// Sprawdzenie czy plik ini istnieje
 	if (reader.ParseError() < 0) {
 		cout << "Can't load 'Path.ini'\n";
 		cout << "Press any key." << endl;
@@ -54,8 +66,14 @@ int main()
 	WIN32_FIND_DATA FileName;
 	string read_path = reader.Get("PSC", "ReadPath", "UNKNOWN");
 	string write_path = reader.Get("PSC", "WritePath", read_path);
-	cout << read_path.c_str() << endl;
-	cout << write_path.c_str() << endl;
+
+	/*
+		Ponizej znajduje sie kod odpowiedzialny za sprawdzenie poprawnosci sciezek zdefiniowanych w pliku .ini
+		Wykorzystywana jest funkcja stat sluzaca do zwracania informacji o podanym pliku badz sciezce
+		W przypadku kiedy sciezka zrodlowa nie istnieje dzialanie programu jest przerywane,
+		jezeli sciezka docelowa nie istnieje najpierw podejmowana jest proba jej utworzenia, w przypadku
+		niepowodzenia dzialanie programu jest przerywane
+	*/
 
 	if (stat(read_path.c_str(), &info) != 0)
 	{
@@ -120,7 +138,11 @@ int main()
 	
 	
 	HANDLE hfind = FindFirstFile(roz_sciezka, &FileName);
-		
+	
+	/*
+		Ponizej znajduje sie petla przegladajaca sciezke zrodlowa w poszukiwaniu plikow .jpg
+	*/
+
 	if (hfind != INVALID_HANDLE_VALUE)
 	{
 		do
@@ -137,13 +159,7 @@ int main()
 	}
 	
 	int n = FileList.size();
-	/*
-	for (int i = 0; i < FileList.size(); i++)
-	{
-		start_img.push_back(imread(FileList[i]));
-		//imshow("Start_images"+i,start_img[i]);
-	}
-	*/
+	
 	
 	int row = ceil(sqrt((double)n));
 	int column = ceil((double)n / row);
@@ -154,25 +170,7 @@ int main()
 	Mat mozaika(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
 	Mat mozaika2(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
 	
-	/*
-	
-	for (int i = 0; i < start_img.size(); i++)
-	{
-		Mat temporary;
-		vector<Mat> channels;
-		cvtColor(start_img[i], start_img[i], CV_BGR2YCrCb);
 
-		split(start_img[i], channels);
-		equalizeHist(channels[0], channels[0]);
-
-		merge(channels, temporary);
-
-		cvtColor(start_img[i], start_img[i], CV_YCrCb2BGR);
-		cvtColor(temporary, temporary, CV_YCrCb2BGR);
-		final_img.push_back(temporary);
-	}
-
-	*/
 
 	const int threadCount = 2;
 	EqImgsParam params[threadCount] = {
@@ -200,9 +198,11 @@ int main()
 		threads[i] = (HANDLE)_beginthread(&EqualizeImages, 0, &params[i]);
 	}
 
-		WaitForMultipleObjects(threadCount, threads, TRUE, INFINITE);
+		WaitForMultipleObjects(threadCount, threads, TRUE, INFINITE); //oczekiwanie az watki zakoncza dzialanie
 
-
+	/*
+		Petla w ktorej nastepuje sklejanie obrazow w mozaiki
+	*/
 	for (int i = 0; i < FileList.size(); i++)
 	{
 		int x = i%column*s;
@@ -216,7 +216,6 @@ int main()
 		{
 			z = FileList.size() / 2 + i / 2;
 		}
-		cout << z << " " << i << endl;
 		Mat roi = mozaika(Rect(x, y, s, w));
 		Mat roi2 = mozaika2(Rect(x, y, s, w));
 		resize(imread(FileList[i]), roi, roi.size());

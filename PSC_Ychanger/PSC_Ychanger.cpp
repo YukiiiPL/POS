@@ -26,21 +26,21 @@ void  EqualizeImages(void *data) {
 	EqImgsParam *params = (EqImgsParam*)data;
 	for (int i = params->startIndex; i < params->start_img.size(); i += params->step)
 	{
-		Mat temporary;
-		Mat start_image;
-		start_image = imread(params->start_img[i]);
+		Mat temporary;										//macierz przechowuj¹ca zmieniane zdjêcie
+		Mat start_image;									//macierz przechowuj¹ca zdjêcie pocz¹tkowe
+		start_image = imread(params->start_img[i]);			//wczytanie zdjêcia z zadanej œcie¿ki (start_img[i] to œcierza)
 
-		vector<Mat> channels;
-		cvtColor(start_image, start_image, CV_BGR2YCrCb);
+		vector<Mat> channels;								//vektor macierzy przechowuj¹cy obraz w 3 sk³adowych (Y, Cr,Cb)
+		cvtColor(start_image, start_image, CV_BGR2YCrCb);	//zamiana z RGB na YCrCb
 
-		split(start_image, channels);
-		equalizeHist(channels[0], channels[0]);
+		split(start_image, channels);						//rozdzielenie sk³adowych obrazu na 3 macierze
+		equalizeHist(channels[0], channels[0]);				//wyrównanie histogramu na podstawie sk³adowej luminancji
 
-		merge(channels, temporary);
+		merge(channels, temporary);							//zastosowanie zmienionej macierzy luminancji do obrazu
 
-		cvtColor(start_image, start_image, CV_YCrCb2BGR);
-		cvtColor(temporary, temporary, CV_YCrCb2BGR);
-		params->final_img.push_back(temporary);
+		cvtColor(start_image, start_image, CV_YCrCb2BGR);	//powrót z YCrCb do RGB pliku podstawowego
+		cvtColor(temporary, temporary, CV_YCrCb2BGR);		//zamiana z YCrCb do RGB pliku po wyrównaniu histogramu
+		params->final_img.push_back(temporary);				//wpisanie obrazu wynikowego do vektora przechowywuj¹cego obrazy wynikowe
 	}
 }
 
@@ -48,9 +48,8 @@ void  EqualizeImages(void *data) {
 int main()
 {
 	struct stat info;
-
 	
-	vector<Mat> start_img, final_img;
+	vector<Mat> start_img, final_img;						//deklaracja vektorów
 
 	INIReader reader("Path.ini");
 
@@ -158,17 +157,17 @@ int main()
 		} while (FindNextFile(hfind, &FileName));
 	}
 	
-	int n = FileList.size();
+	int n = FileList.size();										//zmienna przechowuj¹ca iloœæ odczytanych œcierzek obrazów w folderze
 	
 	
-	int row = ceil(sqrt((double)n));
-	int column = ceil((double)n / row);
+	int row = ceil(sqrt((double)n));								//wyliczanie iloœci obrazów w wierszu mozaikach
+	int column = ceil((double)n / row);								//wyliczanie iloœci wierszy w mozaice
 
-	int s = 800. / column;
-	int w = 0.75*s;
+	int s = 800. / column;											//wyznaczanie szerokoœci pojedyñczego obrazu mozaiki
+	int w = 0.75*s;													//wyliczanie wysokoœci pojedyñczego obrazu mozaiki
 
-	Mat mozaika(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
-	Mat mozaika2(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));
+	Mat mozaika(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));			//deklaracja mozaiki dla obrazów wejœciowych
+	Mat mozaika2(row*w, column*s, CV_8UC3, CV_RGB(0, 0, 0));		//deklaracja mozaiki dla obrazów wyjœciowych
 	
 
 
@@ -205,10 +204,10 @@ int main()
 	*/
 	for (int i = 0; i < FileList.size(); i++)
 	{
-		int x = i%column*s;
-		int y = i / column*w;
+		int x = i%column*s;									//wyliczanie sk³adowej x do wklejenia obrazu do mozaiki
+		int y = i / column*w;								//wyliczanie sk³adowej y do wklejenia obrazu do mozaiki
 		int z;
-		if (i % 2 != 0)
+		if (i % 2 != 0)										//ustawianie kolejnoœci wklejania obrazów przetworzonych do mozaiki obrazów wyjœciowych
 		{
 			z = i - i / 2 - 1;
 		}
@@ -216,18 +215,18 @@ int main()
 		{
 			z = FileList.size() / 2 + i / 2;
 		}
-		Mat roi = mozaika(Rect(x, y, s, w));
-		Mat roi2 = mozaika2(Rect(x, y, s, w));
-		resize(imread(FileList[i]), roi, roi.size());
-		resize(final_img[z], roi2, roi2.size());
-		namedWindow("Start_images", CV_WINDOW_KEEPRATIO);
-		namedWindow("Final_images", CV_WINDOW_KEEPRATIO);
-		imshow("Start_images", mozaika);
-		imshow("Final_images", mozaika2);
+		Mat roi = mozaika(Rect(x, y, s, w));				//utworzenie prostok¹tów do których zostan¹ wklejone obrazy wejœciowe
+		Mat roi2 = mozaika2(Rect(x, y, s, w));				//utworzenie prostok¹tów do których zostan¹ wklejone obrazy przetworzone
+		resize(imread(FileList[i]), roi, roi.size());		//dopasowanie obrazów wejœciowych do rozmiarów pola mozaiki
+		resize(final_img[z], roi2, roi2.size());			//dopasowanie obrazów przetworzonych do rozmiarów pola mozaiki
+		namedWindow("Start_images", CV_WINDOW_KEEPRATIO);	//nazywanie okna pokazuj¹cego mozaikê z obrazami wejœciowymi
+		namedWindow("Final_images", CV_WINDOW_KEEPRATIO);	//nazywanie okna pokazuj¹cego mozaikê z obrazami wyjœciowymi
+		imshow("Start_images", mozaika);					//wyœwietlanie mozaiki plików wejœciowych
+		imshow("Final_images", mozaika2);					//wyœwietlanie mozaiki plików wyjœciowych
 	}
-	imwrite(write_path + "/Start_images.jpg", mozaika);
-	imwrite(write_path + "/Final_images.jpg", mozaika2);
-	waitKey(0);
+	imwrite(write_path + "/Start_images.jpg", mozaika);		//zapisanie utworzonej mozaiki obrazów wejœciowych do zadanej œcierzki
+	imwrite(write_path + "/Final_images.jpg", mozaika2);	//zapisanie utworzonej mozaiki obrazów wyjœciowych do zadanej œcierzki
+	waitKey(0);												//kilkniêcie "Enter" podczas otworzonego którejkowiek mozaiki powoduje zamkniêcie programu
     return 0;
 }
 

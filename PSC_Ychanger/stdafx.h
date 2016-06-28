@@ -32,5 +32,12 @@ using namespace cv;
 using namespace std;
 
 
+/// \brief Funkcja sluzaca do wyrownwania jasnosci obrazu
+
+/// \details Funkcja dokonuje operacji wyrownania jasnosci na wszystkich obrazach znajdujacych sie wewnatrz wektora <i>data</i>
+
+/// \param <i>data</i> wektor zawierajacy sciezki do obrazow
+
+void  EqualizeImages(void *data);
 
 // TODO: reference additional headers your program requires here

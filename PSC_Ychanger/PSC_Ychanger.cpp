@@ -6,6 +6,10 @@
 /// \brief Klasa przechowujaca parametry dla watku 
 
 /// \details Klasa przechowuje takie parametry jak indeks startowy dla watku, krok przeszukiwania wektora oraz wskazniki dla wektora sciezek zrodlowych oraz wektora obrazow docelowych
+/// \param <i>startIndex</i> indeks od którego watek zacznie przetwarzanie
+/// \param <i>step</i> co ktory obraz bedzie przetwarzany przez watek (zazwyczaj rowne liczbie watkow)
+/// \param <i>&start_img</i> referencja do wektora ze siezkami obrazow startowych
+/// \param <i>&final_img</i> referencja do wektora obrazow przetworzonych
 
 struct EqImgsParam {
 	int startIndex;
@@ -20,10 +24,10 @@ struct EqImgsParam {
 
 	/// \details Funkcja dokonuje operacji wyrownania jasnosci na wszystkich obrazach znajdujacych sie wewnatrz wektora <i>data</i>
 
-	/// \param <i>data</i> wektor zawierajacy sciezki do obrazow
+	/// \param <i>data</i> struktura przechowujaca parametry konwersji
 
 void  EqualizeImages(void *data) {
-	EqImgsParam *params = (EqImgsParam*)data;
+	EqImgsParam *params = (EqImgsParam*)data;				// Rzutowanie z powrotem na typ EqImgsParam. _beginthreadex() oczekuje void FunkcjaWatku(void*).
 	for (int i = params->startIndex; i < params->start_img.size(); i += params->step)
 	{
 		Mat temporary;										//macierz przechowujaca zmieniane zdjecie
@@ -40,7 +44,7 @@ void  EqualizeImages(void *data) {
 
 		cvtColor(start_image, start_image, CV_YCrCb2BGR);	//powrot z YCrCb do RGB pliku podstawowego
 		cvtColor(temporary, temporary, CV_YCrCb2BGR);		//zamiana z YCrCb do RGB pliku po wyrownaniu histogramu
-		params->final_img.push_back(temporary);				//wpisanie obrazu wynikowego do vektora przechowywuj�cego obrazy wynikowe
+		params->final_img.push_back(temporary);				//wpisanie obrazu wynikowego do vektora przechowywujšcego obrazy wynikowe
 	}
 }
 
@@ -186,7 +190,8 @@ int main()
 			final_img
 		}
 
-	};
+	};									// inicjalizacja parametrow dla podzialu pracy na 2 watki
+										//watek 0: co 2 obraz od obrazu 0, watek 1: co 2 obraz od obrazu 1	
 
 	
 
@@ -194,7 +199,7 @@ int main()
 
 	for (int i = 0; i < threadCount; ++i)
 	{
-		threads[i] = (HANDLE)_beginthread(&EqualizeImages, 0, &params[i]);
+		threads[i] = (HANDLE)_beginthread(&EqualizeImages, 0, &params[i]);	//Mozemy przekazac tylko 1 parametr do funkcji. Stad wymagane jest uzycie struktury.
 	}
 
 		WaitForMultipleObjects(threadCount, threads, TRUE, INFINITE); //oczekiwanie az watki zakoncza dzialanie
